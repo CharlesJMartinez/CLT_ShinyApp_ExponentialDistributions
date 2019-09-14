@@ -1,0 +1,90 @@
+---
+title: "Using CLT on Exponential Distribution"
+author: "Carlos Martinez"
+date: "9/14/2019"
+output: html_document
+runtime: shiny
+resource_files:
+- server.R
+- ui.R
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(gridExtra)
+```
+
+## Application Summary
+
+The Central Limit Theorem (CLT) states that the distribution of averages of iid variables of any distribution becomes that of a normal distribution as the sample size increases. In this application we will use samples of iid with exponential distibution to ilustrate this concept.
+
+The application will allow the user to enter different values that will be used to generate the simulatons that will disply plots showing the density of both the original exponential samples and the averages of those samples.
+
+The application will use the R function *rexp* to generate a series of iid with an exponential distribution using two parameters: **n** number of variables generated and **lambda** which defines the rate of events in the exponential distribution.
+
+The user will also be able to define how many simulations of series of length **n** and parameter **lambda** will be used to calculate the averages that should show a normal distribution.
+
+The point of the application is to show the user how by incrementing the number of simulations the resulting averages are more and more presenting a gaussian (normal) distribution, which is characterized by the bell shape.
+
+### Exponential Distribution
+
+The exponential distribution is a continuous probability distribution used to model the time we need to wait before a given event occurs. It is the continuous counterpart of the geometric distribution, which is instead discrete.
+
+In an Exponential distribution Lambda is defined as the average time/space between events (successes).
+
+Suppose I am waiting for a bus at a stop. And suppose that a bus usually arrives at the stop in every 10 mins. Now I define ?? to be the rate of arrival of a bus per minute. So, Lambda = (1/10).
+
+In an exponential distribution the theoretical expected value or mean is calculated as 1/Lambda, and the standard deviation is also calculated as 1/Lambda.
+
+## Inputs
+
+**Lamba Value:** the user can select between a pre-defined set of values (0.2, 0.5, 0.75, 1.00, 1.50, 2.00). This value will be part of the parameters used by the R function **rexp** to generate the series of exponentially distributed iids.
+
+**Sample Size:** the user can select between a pre-defined set of values (20, 50, 100, 500, 1000). This value will be be part of the parameters used by the R function *rexp* to generate the series of exponentially distributed iid.
+
+The call to R to generate the iid series will be **rexp(Sample size, Lambda)**.
+
+**Number of Simulations:** The user can select (using a slider) the number of series to be used when calculating the average of exponentially distributed iids that will be used to plot the results showing the distribution that is presented (normal).
+
+## Outputs
+
+Plot 1: Histogram and density plot of a series generated using the parameters provided by the user (Lambda value and Sample Size).
+
+Plot 2: Histogram and density plot of the averages of a number of series generated using the parameters provided by the user (the number of series is defined by the value Number of Simulations).
+
+## Application
+
+```{r eruptions, echo=FALSE}
+inputPanel(
+  selectInput("lambda", label = "Lambda Value:",
+              choices = c(0.2, 0.5, 0.75, 1.00, 1.50, 2.00), selected = 0.2),
+  
+  selectInput("samsize", label = "Sample Size:",
+              choices = c(20, 50, 100, 500, 1000), selected = 20),
+  
+  sliderInput("numSimulations", label = "Number of Simulations:",
+              min = 100, max = 5000, value = 100, step =100)
+)
+
+
+renderPlot({
+  strLblX1 = paste("Series of ",input$samsize, "observations with lambda= ",input$lambda," ")
+  strLblX2 = paste("Averages of ", input$numSimulations," series of ",input$samsize, "observations with lambda= ",input$lambda," ")
+  set.seed(1)
+  data <- rexp(as.numeric(input$samsize), as.numeric(input$lambda))
+  df1 <- data.frame(x=data)
+  p1 <- ggplot(df1, aes(x)) + geom_histogram(aes(y=..density..),colour="blue", fill="white") + geom_density(alpha=0.2,col="red",fill="#FF6666", size=2) + ggtitle("Plot 1:Histogram and density plot of \n the sample generated that follows an exponential distribution") + theme(plot.title = element_text(color="blue", size=12,face="bold")) + xlab(strLblX1)
+  
+  mns2=NULL
+  j <- as.integer(input$numSimulations)
+  for (i in 1 : j ) mns2 = c(mns2, mean(rexp(as.numeric(input$samsize),as.numeric(input$lambda))))
+  df2 <- data.frame(x=mns2,size=as.numeric(input$samsize))
+  p2 <- ggplot(df2, aes(x)) + geom_histogram(aes(y=..density..),colour="blue", fill="white") + geom_density(alpha=0.2,col="red",fill="#FF6666", size=2) + ggtitle("Plot 2:Histogram and density plot of \n the average of the series generated using an exponential distribution") + theme(plot.title = element_text(color="blue", size=12,face="bold")) + xlab(strLblX2)
+  
+  grid.arrange(p1,p2,nrow=1)
+})
+```
+
+
+
